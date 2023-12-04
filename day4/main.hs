@@ -14,36 +14,27 @@ main = do
     putStrLn $ show $ part2 input
 
 part1, part2 :: String -> Int
-part1 = sum . map (score . myWinningValues) . parse
-part2 = sum . map snd . play . parse
+part1 = sum . map (score . winningValues) . parse
+part2 = sum . play . parse
 
-play :: [Card] -> [(Card, Int)]
-play cs = playAll cardCount cardCount
+play :: [Card] -> [Int]
+play cards = play' $ map (\c -> (length (winningValues c), 1)) cards
     where
-        cardCount = map (\c -> (c,1)) cs
+        play' :: [(Int, Int)] -> [Int]
+        play' []                             = []
+        play' ((winningCount, cardCount):xs) = cardCount : play' rest
+            where rest = mapN (\(wc, cc) -> (wc, cc + cardCount)) winningCount xs
 
-playAll :: [(Card, Int)] -> [(Card, Int)] -> [(Card, Int)]
-playAll all []     = all
-playAll all (c:cs) = playAll played newCs
-    where
-        played = play' all c
-        diff = length all - length cs
-        newCs = drop diff played
 
-play' :: [(Card, Int)] -> (Card, Int) -> [(Card, Int)]
-play' cards (card, n) = map (\(c,i) -> if ((c,i) `elem` winning) then (c,i+n) else (c, i)) cards
-    where
-        index = snd $ head $ dropWhile (\((c,_), _) -> c /= card) $ zip cards [0..]
-        winns = length $ myWinningValues card
-        winning = take winns $ drop (index + 1) cards
+
+winningValues :: Card -> [Int]
+winningValues (Card _ winning my) = filter (`elem` winning) my
 
 score :: [Int] -> Int
 score []     = 0
-score [_]      = 1
-score (x:xs) = 2 * score xs
+score xs = 2 ^ (length xs - 1)
 
-myWinningValues :: Card -> [Int]
-myWinningValues (Card _ winning my) = filter (\v -> v `elem` winning) my
+
 
 parse :: String -> [Card]
 parse = map parseCard . lines
@@ -66,3 +57,7 @@ splitOn = splitOn' []
         splitOn' aq c ss@(x:xs)
             | take (length c) ss == c = aq : splitOn' [] c (drop (length c) ss)
             | otherwise               = splitOn' (aq ++ [x]) c xs
+
+mapN :: (a -> a) -> Int -> [a] -> [a]
+mapN f n xs = map f (take n xs) ++ (drop n xs)
+
