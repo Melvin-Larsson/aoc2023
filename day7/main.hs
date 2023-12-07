@@ -25,7 +25,7 @@ score c = sum . zipWith (\n (Hand  _ _ v) -> n * v) [1..] . sortBy c
 
 
 getLabelCount1 :: String -> [Int]
-getLabelCount1 = reverse . sort . map snd . map (\xs -> (head xs, length xs)) . group . sort
+getLabelCount1 = reverse . sort . map length . group . sort
 
 getLabelCount2 :: String -> [Int]
 getLabelCount2 s
@@ -43,7 +43,7 @@ comp (Hand t1 s1 _) (Hand t2 s2 _)
   | diff2 == J = GT
   | otherwise  = compare diff1 diff2
     where
-        (diff1, diff2) = (head $ dropWhile (\(n1, n2) -> n1 == n2) $ zip s1 s2) 
+        (diff1, diff2) = head $ dropWhile (uncurry (==)) $ zip s1 s2
 
 
 parse :: (String -> [Int]) -> String -> [Hand]
