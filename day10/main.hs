@@ -1,6 +1,8 @@
 import Prelude hiding (traverse)
 
 import Data.Set (Set)
+import Data.Foldable (find)
+import Data.Maybe
 import qualified Data.Set as Set
 
 type Pos = (Int, Int)
@@ -29,29 +31,15 @@ part2 input = width*height - length path - Set.size outsides
   
 
 getOutsides :: [[Char]] -> [Pos] -> Set Pos
-getOutsides world path = walkFrom world pathSet Set.empty (Set.union outsides2 (go path2))
+getOutsides world path
+  | any (isOutside world) a = a
+  | otherwise               = b
   where
         pathSet = Set.fromList path
+        path2 = reverse path
 
-        height = length world
-        width = length (head world)
-
-        border = [(0, y) | y <- [0..(height - 1)]] ++ [(width - 1, y) | y <- [0..(height-1)]] ++ [(x, 0) | x <- [0..(width-1)]] ++ [(x, height-1) | x <- [0..(width-1)]]
-        outsides1 :: Set Pos
-        outsides1 = Set.fromList $ filter (\p -> not $ Set.member p pathSet) border
-        outsides2 :: Set Pos
-        outsides2 = walkFrom world pathSet Set.empty outsides1 
-
-        start, nearest :: Pos
-        start = head $ Set.toList $ Set.filter (\p -> any (isAdjacent p) path) outsides2
-        nearest = head $ dropWhile (\p -> not $ isAdjacent start p) path
-
-        
-        (p1, p2) = getDirPair path nearest
-
-        path2
-          | getRightPos (p1, p2) == start = path
-          | otherwise = reverse path
+        b = walkFrom world pathSet Set.empty (go path)
+        a = walkFrom world pathSet Set.empty (go path2)
 
         go :: [Pos] -> Set Pos
         go []  = Set.empty
@@ -66,13 +54,8 @@ getOutsides world path = walkFrom world pathSet Set.empty (Set.union outsides2 (
 isInBounds :: [[Char]] -> Pos -> Bool
 isInBounds world (x,y) = x >= 0 && y >= 0 && x < (length (head world)) && y < (length world)
 
-isAdjacent :: Pos -> Pos -> Bool
-isAdjacent (x1, y1) (x2, y2) = abs (x1 - x2) + abs (y1 - y2) == 1
-
-getDirPair :: [Pos] -> Pos -> (Pos, Pos)
-getDirPair (x:y:xs) p
-  | p == x =  (x, y)
-  | otherwise = getDirPair ((y:xs) ++ [x]) p
+isOutside :: [[Char]] -> Pos -> Bool
+isOutside world (x,y) = x <= 0 || y <= 0 || x >= (length (head world) - 1) || y >= (length world - 1)
 
 getRightPos :: (Pos, Pos) -> Pos
 getRightPos ((x1, y1), (x2, y2))
